@@ -142,9 +142,9 @@
       <div class="field"><label class="field-label" for="f-size"><span class="badge">S</span> Size — ขนาดท่อใน (ID) <span class="hint">35%</span></label>
         <select id="f-size"><option value="">— ทุกขนาด —</option></select>
         <div class="field-hint">ขนาด ID เป็น mm</div></div>
-      <div class="field"><label class="field-label"><span class="badge">T</span> Temperature — อุณหภูมิ <span class="hint">25%</span></label>
-        <div class="input-row"><input type="number" id="f-temp-min" placeholder="ต่ำสุด" step="1"><span class="sep">ถึง</span><input type="number" id="f-temp-max" placeholder="สูงสุด" step="1"><span class="unit-suffix">°C</span></div>
-        <div class="field-hint">เว้นว่าง = ไม่กรอง</div></div>
+      <div class="field"><label class="field-label" for="f-temp"><span class="badge">T</span> Temperature — อุณหภูมิของของไหล <span class="hint">25%</span></label>
+        <div class="input-row"><input type="number" id="f-temp" placeholder="เช่น 80" step="1"><span class="unit-suffix">°C</span></div>
+        <div class="field-hint">อุณหภูมิที่จะใช้งาน — ระบบเช็คว่าสายทนได้มั้ย</div></div>
       <div class="field"><label class="field-label"><span class="badge">A</span> Application — ลักษณะใช้งาน <span class="hint">7.5%</span></label>
         <select id="f-flow"><option value="">— ทุกแบบ —</option></select>
         <div class="field-hint">ส่ง / ดูด / ดูด+ส่ง</div></div>
@@ -167,7 +167,7 @@
   'use strict';
   const state = {
     db: null, hoses: [],
-    filters: { size:'', temp_min:null, temp_max:null, flow_type:'',
+    filters: { size:'', temp:null, flow_type:'',
       media_tags:[], material:'', pressure:null, pressure_unit:'bar', ends:[] }
   };
   window.__hoseApp = { state: state };
@@ -218,8 +218,33 @@
   function populateSize(){
     const s = document.getElementById('f-size');
     uniqueSorted(state.hoses.map(h=>h.size&&h.size.id_mm)).forEach(v=>{
-      const o=document.createElement('option');o.value=String(v);o.textContent=v+' mm';s.appendChild(o);
+      const o=document.createElement('option');o.value=String(v);
+      o.textContent = sizeLabel(v);
+      s.appendChild(o);
     });
+  }
+  // mm → หุน + inch fraction (ภาษาช่างไทย)
+  function sizeLabel(mm){
+    const huns = (mm/25.4)*8;       // 1 หุน = 1/8 นิ้ว
+    const nearest = Math.round(huns);
+    const exactMm = (nearest/8)*25.4;
+    const diff = Math.abs(mm - exactMm);
+    if (diff < 0.9){
+      // ตรงพอสมควรกับหุน
+      const inchStr = inchFraction(nearest);
+      return mm+' mm · '+nearest+' หุน ('+inchStr+')';
+    }
+    return mm+' mm · ≈'+huns.toFixed(1)+' หุน';
+  }
+  // mixed number — ช่างไทยเรียกแบบ "1-1/2 นิ้ว" ไม่ใช่ 3/2"
+  function inchFraction(eighths){
+    const whole = Math.floor(eighths/8);
+    let rem = eighths%8;
+    if (rem===0) return whole+'"';
+    let d = 8;
+    while (rem%2===0 && d%2===0){ rem/=2; d/=2; }
+    const frac = rem+'/'+d+'"';
+    return whole ? whole+'-'+frac : frac;
   }
   function populateFlow(){
     const s = document.getElementById('f-flow');
@@ -251,8 +276,7 @@
   }
   function wireEvents(){
     document.getElementById('f-size').addEventListener('change',e=>{state.filters.size=e.target.value;updateCounter();});
-    document.getElementById('f-temp-min').addEventListener('input',e=>{state.filters.temp_min=e.target.value===''?null:Number(e.target.value);updateCounter();});
-    document.getElementById('f-temp-max').addEventListener('input',e=>{state.filters.temp_max=e.target.value===''?null:Number(e.target.value);updateCounter();});
+    document.getElementById('f-temp').addEventListener('input',e=>{state.filters.temp=e.target.value===''?null:Number(e.target.value);updateCounter();});
     document.getElementById('f-flow').addEventListener('change',e=>{state.filters.flow_type=e.target.value;updateCounter();});
     document.getElementById('f-material').addEventListener('change',e=>{state.filters.material=e.target.value;updateCounter();});
     const onP=()=>{
@@ -280,8 +304,8 @@
     updateCounter();
   }
   function resetAll(){
-    state.filters={size:'',temp_min:null,temp_max:null,flow_type:'',media_tags:[],material:'',pressure:null,pressure_unit:'bar',ends:[]};
-    ['f-size','f-temp-min','f-temp-max','f-flow','f-material','f-pressure'].forEach(id=>document.getElementById(id).value='');
+    state.filters={size:'',temp:null,flow_type:'',media_tags:[],material:'',pressure:null,pressure_unit:'bar',ends:[]};
+    ['f-size','f-temp','f-flow','f-material','f-pressure'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f-pressure-unit').value='bar';
     document.querySelectorAll('.chip.selected').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-checked','false');});
     updateCounter();
@@ -307,23 +331,26 @@
     return { score:0, status:'short', detail:h+' mm (ห่างมาก)' };
   }
   function scoreTemperature(hose, f){
-    const uMin=f.temp_min, uMax=f.temp_max;
-    if (uMin==null && uMax==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    const u = f.temp;
+    if (u==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
     const t = hose.temperature||{};
     const hMin=t.min_c, hMax=t.max_c;
     if (hMin==null||hMax==null) return { score:50, status:'unknown', detail:'DB ไม่มี temp' };
     const display = hMin+'°C ถึง '+hMax+'°C';
-    const issues = []; let loss = 0;
-    if (uMin!=null && hMin>uMin){ const g=hMin-uMin; issues.push('เย็นไม่พอ '+g.toFixed(0)+'°C'); loss+=clamp(g*2,0,60); }
-    if (uMax!=null && hMax<uMax){ const g=uMax-hMax; issues.push('ร้อนไม่พอ '+g.toFixed(0)+'°C'); loss+=clamp(g*2,0,60); }
-    if (issues.length===0){
-      const overs = [];
-      if (uMin!=null && hMin<uMin-30) overs.push('เย็นเกิน '+(uMin-hMin).toFixed(0)+'°C');
-      if (uMax!=null && hMax>uMax+30) overs.push('ร้อนเกิน '+(hMax-uMax).toFixed(0)+'°C');
-      if (overs.length) return { score:100, status:'over', detail:display+' — '+overs.join(', ') };
-      return { score:100, status:'ok', detail:display };
+    // ตรงช่วง
+    if (u>=hMin && u<=hMax){
+      // check overkill: hose ทนได้กว้างกว่าที่ใช้มาก
+      const margin = hMax - u;
+      if (margin >= 50) return { score:100, status:'over', detail:display+' — ทนเกินที่ใช้ '+margin.toFixed(0)+'°C (overkill)' };
+      return { score:100, status:'ok', detail:display+' (ใช้ '+u+'°C ครอบคลุม)' };
     }
-    return { score:clamp(100-loss,0,100), status:'short', detail:display+' — '+issues.join(', ') };
+    // ขาด: ร้อนเกินสาย หรือ เย็นเกินสาย
+    if (u > hMax){
+      const gap = u - hMax;
+      return { score:clamp(100-gap*3,0,100), status:'short', detail:display+' — ใช้ '+u+'°C ร้อนเกินสาย '+gap.toFixed(0)+'°C (เสี่ยง)' };
+    }
+    const gap = hMin - u;
+    return { score:clamp(100-gap*3,0,100), status:'short', detail:display+' — ใช้ '+u+'°C เย็นเกินสาย '+gap.toFixed(0)+'°C (สายอาจแข็ง/แตก)' };
   }
   function scorePressure(hose, f){
     if (f.pressure==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
