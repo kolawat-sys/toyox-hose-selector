@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOYOX Hose Selector — STAMPED</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg:#f5f6f8; --surface:#fff; --border:#d8dde3; --border-strong:#b4bcc6;
+    --text:#1a2330; --text-muted:#5a6573;
+    --primary:#c8102e; --primary-dark:#9a0c24; --accent:#0064a8;
+    --counter-bg:#1a2330; --counter-text:#fff;
+    --radius:6px; --shadow-sm:0 1px 2px rgba(0,0,0,0.06);
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",Roboto,sans-serif;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.5;}
+  .app{max-width:1100px;margin:0 auto;padding:16px;padding-bottom:120px;}
+  header.app-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:12px;margin-bottom:16px;border-bottom:2px solid var(--primary);}
+  header.app-header h1{margin:0;font-size:1.4rem;color:var(--primary);}
+  header.app-header .subtitle{font-size:0.85rem;color:var(--text-muted);}
+  header.app-header .version-chip{font-size:0.75rem;padding:2px 8px;background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text-muted);font-family:monospace;}
+  .notice{padding:10px 14px;margin-bottom:12px;border-radius:var(--radius);font-size:0.9rem;border-left:4px solid #b06a00;background:#fff8e6;color:#5a4400;display:none;}
+  .notice.show{display:block;}
+  .notice.error{border-left-color:var(--primary);background:#fdecef;color:#5a0a18;}
+  form#stamped-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px;}
+  @media (min-width:720px){.grid{grid-template-columns:repeat(2,1fr);gap:16px 20px;}}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field-label{font-weight:600;font-size:0.92rem;display:flex;align-items:center;gap:8px;}
+  .field-label .badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;background:var(--primary);color:#fff;font-size:0.75rem;font-weight:700;font-family:monospace;}
+  .field-label .hint{font-weight:400;font-size:0.78rem;color:var(--text-muted);}
+  .field-hint{font-size:0.78rem;color:var(--text-muted);}
+  .field input,.field select{width:100%;padding:8px 10px;font-size:0.95rem;font-family:inherit;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff;color:var(--text);}
+  .field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .input-row{display:flex;gap:8px;align-items:center;}
+  .input-row>*{flex:1;}
+  .input-row .sep{flex:0 0 auto;color:var(--text-muted);font-size:0.9rem;}
+  .unit-suffix{flex:0 0 auto;font-size:0.85rem;color:var(--text-muted);}
+  .chip-group{display:flex;flex-wrap:wrap;gap:6px;padding:8px;min-height:44px;background:#fff;border:1px solid var(--border-strong);border-radius:var(--radius);}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.82rem;border:1px solid var(--border-strong);border-radius:999px;background:#f0f2f5;cursor:pointer;user-select:none;transition:all 0.12s;}
+  .chip:hover{background:#e4e8ee;}
+  .chip.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .counter-bar{position:fixed;left:0;right:0;bottom:0;background:var(--counter-bg);color:var(--counter-text);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 12px rgba(0,0,0,0.15);z-index:100;}
+  .counter-bar .count{font-size:1rem;font-weight:500;}
+  .counter-bar .count strong{font-size:1.4rem;color:#ffd166;margin:0 4px;}
+  .counter-bar .actions{display:flex;gap:8px;}
+  .btn{padding:8px 14px;font-size:0.9rem;font-family:inherit;border:1px solid transparent;border-radius:var(--radius);cursor:pointer;font-weight:500;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--counter-text);border-color:rgba(255,255,255,0.3);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.1);}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  footer.app-footer{margin-top:24px;padding:16px 0;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text-muted);line-height:1.6;}
+  footer.app-footer .meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;}
+  footer.app-footer .meta span{font-family:monospace;}
+  footer.app-footer .d-note{padding:10px 12px;background:#eef2f7;border-left:3px solid var(--accent);border-radius:4px;color:var(--text);}
+  .loading{text-align:center;padding:40px 20px;color:var(--text-muted);}
+  .spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media print{.counter-bar,header.app-header .version-chip,.notice{display:none !important;}.app{padding-bottom:16px;}}
+
+  /* ============ Phase 3: Results ============ */
+  #results-section { margin-top: 20px; }
+  .results-header { font-size: 1rem; font-weight: 600; margin: 18px 0 10px; padding: 6px 10px; border-radius: var(--radius); display: flex; align-items: center; gap: 8px; }
+  .results-header .h-count { font-size: 0.85rem; font-weight: 400; opacity: 0.7; }
+  .results-header.bucket-perfect { background: #e8f7ed; color: #1b6d2e; border-left: 4px solid #1b8a3a; }
+  .results-header.bucket-near    { background: #fff7e0; color: #6d5500; border-left: 4px solid #d9a300; }
+  .results-header.bucket-alt     { background: #fbeee6; color: #6d3a00; border-left: 4px solid #c25a00; }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
+  .result-card.b-perfect { border-left-color: #1b8a3a; }
+  .result-card.b-near    { border-left-color: #d9a300; }
+  .result-card.b-alt     { border-left-color: #c25a00; }
+  .rc-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .rc-title { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+  .rc-title .code { color: var(--primary); font-family: monospace; margin-right: 8px; }
+  .rc-title .series { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
+  .rc-score { font-size: 0.85rem; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--text-muted); font-family: monospace; }
+  .rc-score strong { color: var(--text); font-size: 1rem; }
+  .rc-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; }
+  .rc-meta .price { color: var(--primary); font-weight: 600; }
+  .gap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; font-size: 0.82rem; }
+  .gap-item { display: flex; align-items: flex-start; gap: 6px; padding: 4px 8px; border-radius: 4px; background: #f7f8fa; }
+  .gap-item .badge-s { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; font-family: monospace; flex: 0 0 auto; }
+  .gap-item .badge-s.ok      { background: #1b8a3a; color: #fff; }
+  .gap-item .badge-s.over    { background: #0064a8; color: #fff; }
+  .gap-item .badge-s.short   { background: #c25a00; color: #fff; }
+  .gap-item .badge-s.unknown { background: #888; color: #fff; }
+  .gap-item .badge-s.info    { background: #b4bcc6; color: #fff; }
+  .gap-item .g-text { flex: 1; line-height: 1.35; }
+  .gap-item .g-text .g-field { font-weight: 600; }
+  .gap-item.short, .gap-item.unknown { background: #fff5e6; }
+  .gap-item.over { background: #eaf2fb; }
+  .no-results { text-align: center; padding: 30px 16px; color: var(--text-muted); background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+  /* Print: full results, no sticky bar */
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    body { background: #fff; }
+    .app { max-width: 100%; padding: 0; }
+    .counter-bar, header.app-header .version-chip, .notice, form#stamped-form, #btn-print, #btn-reset { display: none !important; }
+    .result-card { page-break-inside: avoid; box-shadow: none; border: 1px solid #999; }
+    .results-header { page-break-after: avoid; }
+    footer.app-footer { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <div><h1>TOYOX Hose Selector</h1><div class="subtitle">เลือกสายยางตามหลัก STAMPED</div></div>
+    <span class="version-chip" id="header-version">v–</span>
+  </header>
+  <div class="notice" id="notice" role="alert"></div>
+  <div id="form-container" aria-live="polite">
+    <div class="loading"><span class="spinner"></span>กำลังโหลดฐานข้อมูล…</div>
+  </div>
+  <div id="results-section" hidden></div>
+
+  <footer class="app-footer" id="app-footer" hidden>
+    <div class="meta">
+      <span>version: <span id="meta-version">–</span></span>
+      <span>last_updated: <span id="meta-updated">–</span></span>
+      <span>records: <span id="meta-records">–</span></span>
+      <span>price_date: <span id="meta-price">–</span></span>
+    </div>
+    <div class="d-note"><strong>D (Delivery):</strong> ราคารวม VAT (THB) · ตรวจสอบ stock และเงื่อนไขจัดส่งกับฝ่ายขายก่อนยืนยันคำสั่งซื้อ</div>
+  </footer>
+  <div class="counter-bar" id="counter-bar" hidden>
+    <div class="count">
+      <div>พบ <strong id="result-count">–</strong> ตัวเลือก <span style="font-size:0.8rem;opacity:0.7;">จาก <span id="total-count">–</span></span></div>
+      <div id="bucket-sub" style="font-size:0.8rem;margin-top:2px;opacity:0.9;">–</div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-ghost" id="btn-reset">ล้างค่า</button>
+      <button type="button" class="btn btn-primary" id="btn-print" title="พิมพ์ผลลัพธ์เป็น PDF">พิมพ์ PDF</button>
+    </div>
+  </div>
+</div>
+<template id="tpl-form">
+  <form id="stamped-form" novalidate>
+    <div class="grid">
+      <div class="field"><label class="field-label" for="f-size"><span class="badge">S</span> Size — ขนาดท่อใน (ID) <span class="hint">35%</span></label>
+        <select id="f-size"><option value="">— ทุกขนาด —</option></select>
+        <div class="field-hint">ขนาด ID เป็น mm</div></div>
+      <div class="field"><label class="field-label"><span class="badge">T</span> Temperature — อุณหภูมิ <span class="hint">25%</span></label>
+        <div class="input-row"><input type="number" id="f-temp-min" placeholder="ต่ำสุด" step="1"><span class="sep">ถึง</span><input type="number" id="f-temp-max" placeholder="สูงสุด" step="1"><span class="unit-suffix">°C</span></div>
+        <div class="field-hint">เว้นว่าง = ไม่กรอง</div></div>
+      <div class="field"><label class="field-label"><span class="badge">A</span> Application — ลักษณะใช้งาน <span class="hint">7.5%</span></label>
+        <select id="f-flow"><option value="">— ทุกแบบ —</option></select>
+        <div class="field-hint">ส่ง / ดูด / ดูด+ส่ง</div></div>
+      <div class="field"><label class="field-label"><span class="badge">M</span> Material — วัสดุ + ของไหล <span class="hint">7.5%</span></label>
+        <select id="f-material" style="margin-bottom:8px;"><option value="">— ทุก family —</option></select>
+        <div class="field-hint" style="margin-bottom:4px;">ลำเลียงอะไร (เลือก tag ใกล้เคียง):</div>
+        <div class="chip-group" id="f-media" role="group" aria-label="media tags"></div></div>
+      <div class="field"><label class="field-label" for="f-pressure"><span class="badge">P</span> Pressure — แรงดัน <span class="hint">25% @ 23°C</span></label>
+        <div class="input-row"><input type="number" id="f-pressure" placeholder="เช่น 5" step="0.1" min="0">
+          <select id="f-pressure-unit" style="flex:0 0 90px;"><option value="bar" selected>bar</option><option value="kPa">kPa</option><option value="MPa">MPa</option><option value="psi">psi</option></select></div>
+        <div class="field-hint">แปลงเป็น bar เทียบกับ DB อัตโนมัติ</div></div>
+      <div class="field"><label class="field-label"><span class="badge">E</span> Ends — ปลายต่อ <span class="hint">informative</span></label>
+        <div class="chip-group" id="f-ends" role="group" aria-label="ends"></div>
+        <div class="field-hint">ไม่นับคะแนน — แสดงในผลลัพธ์เพื่อ reference</div></div>
+    </div>
+  </form>
+</template>
+<script>
+(function(){
+  'use strict';
+  const state = {
+    db: null, hoses: [],
+    filters: { size:'', temp_min:null, temp_max:null, flow_type:'',
+      media_tags:[], material:'', pressure:null, pressure_unit:'bar', ends:[] }
+  };
+  window.__hoseApp = { state: state };
+
+  function toBar(v, u){
+    if (v===null||v===undefined||isNaN(v)) return null;
+    switch(u){case 'bar':return v;case 'kPa':return v/100;case 'MPa':return v*10;case 'psi':return v*0.0689476;default:return v;}
+  }
+  window.__hoseApp.toBar = toBar;
+
+  document.addEventListener('DOMContentLoaded', init);
+  async function init(){
+    try{
+      const res = await fetch('./hose-database.json', { cache:'no-cache' });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const db = await res.json();
+      state.db = db; state.hoses = db.hoses || [];
+      renderApp();
+    } catch(err){ showError(err); }
+  }
+  function showError(err){
+    const isFile = location.protocol==='file:';
+    const n = document.getElementById('notice');
+    n.classList.add('show','error');
+    n.innerHTML = isFile
+      ? '<strong>โหลด hose-database.json ผ่าน file:// ไม่ได้</strong> (CORS) — เปิดผ่าน local server (เช่น <code>python -m http.server</code>) หรือ deploy GitHub Pages<br><small>Error: '+err.message+'</small>'
+      : '<strong>เกิดข้อผิดพลาด:</strong> '+err.message;
+    document.getElementById('form-container').innerHTML = '';
+  }
+  function renderApp(){
+    const db = state.db;
+    document.getElementById('header-version').textContent = 'v'+(db.version||'?');
+    document.getElementById('meta-version').textContent = db.version||'–';
+    document.getElementById('meta-updated').textContent = db.last_updated||'–';
+    document.getElementById('meta-records').textContent = state.hoses.length;
+    document.getElementById('meta-price').textContent = db.price_date||'–';
+    document.getElementById('app-footer').hidden = false;
+    document.getElementById('counter-bar').hidden = false;
+    const tpl = document.getElementById('tpl-form');
+    const fc = document.getElementById('form-container');
+    fc.innerHTML=''; fc.appendChild(tpl.content.cloneNode(true));
+    populateSize(); populateFlow(); populateMedia(); populateMaterial(); populateEnds();
+    wireEvents(); updateCounter();
+  }
+  function uniqueSorted(arr){
+    return [...new Set(arr.filter(v=>v!==null&&v!==undefined))].sort((a,b)=>typeof a==='number'?a-b:String(a).localeCompare(String(b),'th'));
+  }
+  function populateSize(){
+    const s = document.getElementById('f-size');
+    uniqueSorted(state.hoses.map(h=>h.size&&h.size.id_mm)).forEach(v=>{
+      const o=document.createElement('option');o.value=String(v);o.textContent=v+' mm';s.appendChild(o);
+    });
+  }
+  function populateFlow(){
+    const s = document.getElementById('f-flow');
+    uniqueSorted(state.hoses.map(h=>h.application&&h.application.flow_type)).forEach(v=>{
+      const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);
+    });
+  }
+  function populateMedia(){
+    const c = document.getElementById('f-media'); const counts={};
+    state.hoses.forEach(h=>(h.application&&h.application.media_tags||[]).forEach(t=>counts[t]=(counts[t]||0)+1));
+    Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([tag])=>{
+      const ch=document.createElement('span');ch.className='chip';ch.dataset.value=tag;ch.textContent=tag;
+      ch.setAttribute('role','checkbox');ch.setAttribute('aria-checked','false');ch.tabIndex=0;c.appendChild(ch);
+    });
+  }
+  function populateMaterial(){
+    const s = document.getElementById('f-material');
+    uniqueSorted(state.hoses.map(h=>h.material&&h.material.family)).forEach(v=>{
+      const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);
+    });
+  }
+  function populateEnds(){
+    const c = document.getElementById('f-ends'); const counts={};
+    state.hoses.forEach(h=>(h.ends&&h.ends.recommended||[]).forEach(e=>counts[e]=(counts[e]||0)+1));
+    Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([end])=>{
+      const ch=document.createElement('span');ch.className='chip';ch.dataset.value=end;ch.textContent=end;
+      ch.setAttribute('role','checkbox');ch.setAttribute('aria-checked','false');ch.tabIndex=0;c.appendChild(ch);
+    });
+  }
+  function wireEvents(){
+    document.getElementById('f-size').addEventListener('change',e=>{state.filters.size=e.target.value;updateCounter();});
+    document.getElementById('f-temp-min').addEventListener('input',e=>{state.filters.temp_min=e.target.value===''?null:Number(e.target.value);updateCounter();});
+    document.getElementById('f-temp-max').addEventListener('input',e=>{state.filters.temp_max=e.target.value===''?null:Number(e.target.value);updateCounter();});
+    document.getElementById('f-flow').addEventListener('change',e=>{state.filters.flow_type=e.target.value;updateCounter();});
+    document.getElementById('f-material').addEventListener('change',e=>{state.filters.material=e.target.value;updateCounter();});
+    const onP=()=>{
+      const raw=document.getElementById('f-pressure').value;
+      const u=document.getElementById('f-pressure-unit').value;
+      state.filters.pressure_unit=u;
+      state.filters.pressure = raw===''?null:toBar(Number(raw),u);
+      updateCounter();
+    };
+    document.getElementById('f-pressure').addEventListener('input',onP);
+    document.getElementById('f-pressure-unit').addEventListener('change',onP);
+    wireChips(document.getElementById('f-media'),'media_tags');
+    wireChips(document.getElementById('f-ends'),'ends');
+    document.getElementById('btn-reset').addEventListener('click',resetAll);
+    document.getElementById('btn-print').addEventListener('click',()=>window.print());
+  }
+  function wireChips(c, key){
+    c.addEventListener('click',e=>{const ch=e.target.closest('.chip');if(ch)toggleChip(ch,key);});
+    c.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&e.target.classList.contains('chip')){e.preventDefault();toggleChip(e.target,key);}});
+  }
+  function toggleChip(ch, key){
+    const v=ch.dataset.value; const arr=state.filters[key]; const i=arr.indexOf(v);
+    if(i>=0){arr.splice(i,1);ch.classList.remove('selected');ch.setAttribute('aria-checked','false');}
+    else{arr.push(v);ch.classList.add('selected');ch.setAttribute('aria-checked','true');}
+    updateCounter();
+  }
+  function resetAll(){
+    state.filters={size:'',temp_min:null,temp_max:null,flow_type:'',media_tags:[],material:'',pressure:null,pressure_unit:'bar',ends:[]};
+    ['f-size','f-temp-min','f-temp-max','f-flow','f-material','f-pressure'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-pressure-unit').value='bar';
+    document.querySelectorAll('.chip.selected').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-checked','false');});
+    updateCounter();
+  }
+
+  // ============ Phase 2: STAMPED Scoring ============
+  // Philosophy: ไม่มี hard reject — เสนอตัวเลือกใกล้เคียง พร้อม gap report
+  // Weights: S 35, T 25, P 25, A 7.5, M 7.5 · E และ D = informative (0)
+  // Status: 'ok' / 'over' (overkill) / 'short' (เสี่ยง) / 'unknown' (DB ว่าง)
+  const WEIGHTS = { size:35, temperature:25, pressure:25, application:7.5, material:7.5 };
+  const clamp = (n,lo,hi)=>Math.max(lo,Math.min(hi,n));
+
+  function scoreSize(hose, f){
+    if (f.size===''||f.size==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    const u = Number(f.size);
+    const h = hose.size && hose.size.id_mm;
+    if (h==null) return { score:0, status:'unknown', detail:'DB ไม่มีขนาด' };
+    if (h===u) return { score:100, status:'ok', detail:h+' mm (ตรง)' };
+    const diff = Math.abs(h-u);
+    const pct = diff/u;
+    if (pct<=0.10) return { score:70, status:'short', detail:h+' mm (ต่าง '+diff.toFixed(1)+' mm — fitting ใกล้)' };
+    if (pct<=0.25) return { score:35, status:'short', detail:h+' mm (ต่าง '+diff.toFixed(1)+' mm — เปลี่ยน fitting)' };
+    return { score:0, status:'short', detail:h+' mm (ห่างมาก)' };
+  }
+  function scoreTemperature(hose, f){
+    const uMin=f.temp_min, uMax=f.temp_max;
+    if (uMin==null && uMax==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    const t = hose.temperature||{};
+    const hMin=t.min_c, hMax=t.max_c;
+    if (hMin==null||hMax==null) return { score:50, status:'unknown', detail:'DB ไม่มี temp' };
+    const display = hMin+'°C ถึง '+hMax+'°C';
+    const issues = []; let loss = 0;
+    if (uMin!=null && hMin>uMin){ const g=hMin-uMin; issues.push('เย็นไม่พอ '+g.toFixed(0)+'°C'); loss+=clamp(g*2,0,60); }
+    if (uMax!=null && hMax<uMax){ const g=uMax-hMax; issues.push('ร้อนไม่พอ '+g.toFixed(0)+'°C'); loss+=clamp(g*2,0,60); }
+    if (issues.length===0){
+      const overs = [];
+      if (uMin!=null && hMin<uMin-30) overs.push('เย็นเกิน '+(uMin-hMin).toFixed(0)+'°C');
+      if (uMax!=null && hMax>uMax+30) overs.push('ร้อนเกิน '+(hMax-uMax).toFixed(0)+'°C');
+      if (overs.length) return { score:100, status:'over', detail:display+' — '+overs.join(', ') };
+      return { score:100, status:'ok', detail:display };
+    }
+    return { score:clamp(100-loss,0,100), status:'short', detail:display+' — '+issues.join(', ') };
+  }
+  function scorePressure(hose, f){
+    if (f.pressure==null) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    const uP = f.pressure;
+    const p = hose.pressure && hose.pressure.at_23c;
+    if (!p || p.max==null) return { score:50, status:'unknown', detail:'DB ไม่มี pressure' };
+    const hMax = p.max;
+    const display = hMax+' bar ('+p.kind+')';
+    if (hMax>=uP){
+      if (hMax>=uP*2) return { score:100, status:'over', detail:display+' — เกินที่ใช้ '+(hMax-uP).toFixed(1)+' bar (overkill)' };
+      return { score:100, status:'ok', detail:display };
+    }
+    const gap = uP-hMax;
+    return { score:clamp(100-(gap/uP)*200,0,100), status:'short', detail:display+' — ขาด '+gap.toFixed(1)+' bar (เสี่ยง)' };
+  }
+  function scoreApplication(hose, f){
+    if (!f.flow_type) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    const hFlow = hose.application && hose.application.flow_type;
+    if (!hFlow) return { score:50, status:'unknown', detail:'DB ไม่มี flow' };
+    if (hFlow===f.flow_type) return { score:100, status:'ok', detail:hFlow };
+    if (hFlow==='ดูด+ส่ง' && (f.flow_type==='ดูด'||f.flow_type==='ส่ง'))
+      return { score:100, status:'ok', detail:hFlow+' (รองรับ '+f.flow_type+')' };
+    if (f.flow_type==='ดูด+ส่ง' && (hFlow==='ดูด'||hFlow==='ส่ง'))
+      return { score:50, status:'short', detail:hFlow+' (รองรับแค่ '+hFlow+')' };
+    return { score:0, status:'short', detail:hFlow+' (ไม่ตรง)' };
+  }
+  function scoreMaterial(hose, f){
+    const tags = f.media_tags||[]; const fam = f.material;
+    let famHit = true, famDetail = '';
+    if (fam){
+      famHit = (hose.material && hose.material.family)===fam;
+      famDetail = famHit ? ('family='+fam) : ('family='+(hose.material&&hose.material.family||'?')+' ≠ '+fam);
+    }
+    if (tags.length===0 && !fam) return { score:100, status:'ok', detail:'ไม่ระบุ' };
+    if (tags.length===0)
+      return famHit ? { score:100, status:'ok', detail:famDetail } : { score:30, status:'short', detail:famDetail };
+    const hTags = (hose.application && hose.application.media_tags||[]).map(t=>String(t).toLowerCase());
+    const hLabel = String(hose.application && hose.application.raw_label||'').toLowerCase();
+    const hFam = String(hose.material && hose.material.family||'').toLowerCase();
+    let matched = 0; const det = [];
+    for (const t of tags){
+      const tl = String(t).toLowerCase();
+      if (hTags.includes(tl)){ matched+=1; det.push('✓'+t); }
+      else if (hLabel.includes(tl) || hFam.includes(tl)){ matched+=0.5; det.push('~'+t); }
+      else { det.push('✗'+t); }
+    }
+    let score = (matched/tags.length)*100;
+    if (fam && !famHit) score *= 0.4;
+    const status = score>=100?'ok':score>=50?'short':'unknown';
+    return { score:score, status:status, detail:det.join(' ')+(fam?' · '+famDetail:'') };
+  }
+  function infoEnds(hose, f){
+    const ends = (hose.ends && hose.ends.recommended)||[];
+    const want = f.ends||[];
+    if (want.length===0) return { status:'info', detail:ends.join(', ')||'-' };
+    const hits = ends.filter(e=>want.includes(e));
+    return { status:hits.length?'ok':'short',
+      detail:'แนะนำ: '+(ends.join(', ')||'-')+(hits.length?' (ตรง '+hits.length+'/'+want.length+')':' (ไม่ตรงที่เลือก)') };
+  }
+  function scoreHose(hose, f){
+    const s=scoreSize(hose,f), t=scoreTemperature(hose,f), p=scorePressure(hose,f);
+    const a=scoreApplication(hose,f), m=scoreMaterial(hose,f), e=infoEnds(hose,f);
+    const total = (s.score*WEIGHTS.size + t.score*WEIGHTS.temperature + p.score*WEIGHTS.pressure
+                 + a.score*WEIGHTS.application + m.score*WEIGHTS.material)/100;
+    return { hose:hose, total:total, fields:{S:s,T:t,P:p,A:a,M:m,E:e} };
+  }
+  function applyScoring(){
+    const f = state.filters;
+    const scored = state.hoses.map(h=>scoreHose(h,f));
+    scored.sort((a,b)=>b.total-a.total);
+    return {
+      scored: scored,
+      perfect: scored.filter(x=>x.total>=95),
+      near:    scored.filter(x=>x.total>=70 && x.total<95),
+      alt:     scored.filter(x=>x.total<70 && x.total>0)
+    };
+  }
+  window.__hoseApp.WEIGHTS = WEIGHTS;
+  window.__hoseApp.scoreHose = scoreHose;
+  window.__hoseApp.applyScoring = applyScoring;
+
+  function updateCounter(){
+    const total = state.hoses.length;
+    const r = applyScoring();
+    const visible = r.scored.filter(x=>x.total>0).length;
+    document.getElementById('result-count').textContent = visible;
+    document.getElementById('total-count').textContent = total;
+    const sub = document.getElementById('bucket-sub');
+    if (sub){
+      sub.innerHTML = '<span style="color:#7cd992">ตรง '+r.perfect.length+'</span> · '
+                    + '<span style="color:#ffd166">ใกล้ '+r.near.length+'</span> · '
+                    + '<span style="color:#ffa07a">ทางเลือก '+r.alt.length+'</span>';
+    }
+    renderResults(r);
+  }
+
+  // ============ Phase 3: Result rendering ============
+  const FIELD_LABELS = { S:'Size', T:'Temp', P:'Pressure', A:'Flow', M:'Material', E:'Ends' };
+  const MAX_PER_BUCKET = { perfect: 50, near: 30, alt: 20 };
+
+  function renderResults(r){
+    const sec = document.getElementById('results-section');
+    if (!sec) return;
+    sec.hidden = false;
+    const visible = r.perfect.length + r.near.length + r.alt.length;
+    if (visible === 0){
+      sec.innerHTML = '<div class="no-results">ไม่พบสายที่ตรงเกณฑ์ — ลองลดเงื่อนไข หรือกด <strong>ล้างค่า</strong></div>';
+      return;
+    }
+    let html = '';
+    if (r.perfect.length){
+      html += '<div class="results-header bucket-perfect">✓ ตรงตามต้องการ <span class="h-count">'+r.perfect.length+' ตัวเลือก</span></div>';
+      html += r.perfect.slice(0, MAX_PER_BUCKET.perfect).map(x=>renderCard(x,'b-perfect')).join('');
+      if (r.perfect.length > MAX_PER_BUCKET.perfect) html += truncNotice(r.perfect.length - MAX_PER_BUCKET.perfect);
+    }
+    if (r.near.length){
+      html += '<div class="results-header bucket-near">⚠ ใกล้เคียง (มีข้อขาด/เกิน) <span class="h-count">'+r.near.length+' ตัวเลือก</span></div>';
+      html += r.near.slice(0, MAX_PER_BUCKET.near).map(x=>renderCard(x,'b-near')).join('');
+      if (r.near.length > MAX_PER_BUCKET.near) html += truncNotice(r.near.length - MAX_PER_BUCKET.near);
+    }
+    if (r.alt.length){
+      html += '<div class="results-header bucket-alt">⊘ ทางเลือก (ห่างจาก spec) <span class="h-count">'+r.alt.length+' ตัวเลือก</span></div>';
+      html += r.alt.slice(0, MAX_PER_BUCKET.alt).map(x=>renderCard(x,'b-alt')).join('');
+      if (r.alt.length > MAX_PER_BUCKET.alt) html += truncNotice(r.alt.length - MAX_PER_BUCKET.alt);
+    }
+    sec.innerHTML = html;
+  }
+
+  function truncNotice(n){
+    return '<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:0.82rem;">… ซ่อน '+n+' ตัวที่เหลือ (เพิ่ม filter เพื่อจำกัดผล)</div>';
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function renderCard(item, cls){
+    const h = item.hose;
+    const f = item.fields;
+    const price = h.pricing && h.pricing.per_meter_thb;
+    const od = h.size && h.size.od_mm;
+    const cert = [];
+    if (h.certifications){ if (h.certifications.fda) cert.push('FDA'); if (h.certifications.rohs2) cert.push('RoHS2'); }
+    const certStr = cert.length ? ' · ' + cert.join(', ') : '';
+    const priceStr = price != null ? '<span class="price">฿'+price+'/m</span>' : '';
+
+    // Gap items: render each field
+    const gapItems = ['S','T','P','A','M','E'].map(k=>{
+      const fi = f[k];
+      if (!fi) return '';
+      const status = fi.status || 'info';
+      const cls = status === 'ok' ? '' : status;
+      return '<div class="gap-item '+cls+'">' +
+             '<span class="badge-s '+status+'">'+k+'</span>' +
+             '<span class="g-text"><span class="g-field">'+FIELD_LABELS[k]+':</span> '+escapeHtml(fi.detail||'-')+'</span>' +
+             '</div>';
+    }).join('');
+
+    return '<div class="result-card '+cls+'">' +
+           '<div class="rc-head">' +
+             '<div class="rc-title"><span class="code">'+escapeHtml(h.code)+'</span><span class="series">'+escapeHtml(h.series||'')+'</span></div>' +
+             '<div class="rc-score">คะแนน <strong>'+item.total.toFixed(0)+'</strong>/100</div>' +
+           '</div>' +
+           '<div class="rc-meta">' +
+             '<span>ID '+(h.size&&h.size.id_mm||'?')+' mm'+(od?' / OD '+od+' mm':'')+'</span>' +
+             '<span>'+escapeHtml(h.category||'')+certStr+'</span>' +
+             (priceStr ? '<span>'+priceStr+'</span>' : '') +
+             (h.notes ? '<span style="flex-basis:100%;color:var(--text);">หมายเหตุ: '+escapeHtml(h.notes)+'</span>' : '') +
+           '</div>' +
+           '<div class="gap-grid">'+gapItems+'</div>' +
+           '</div>';
+  }
+})();
+</script>
+</body>
+</html>
