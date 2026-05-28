@@ -2,7 +2,7 @@
 
 เครื่องมือเลือกสายยาง TOYOX ตามหลัก **STAMPED** สำหรับฝ่ายขายและลูกค้า
 
-🔗 **Live:** _(kolawat-sys)_
+🔗 **Live:** [_(kolawat-sys)_](https://github.com/kolawat-sys/toyox-hose-selector)
 
 ---
 
