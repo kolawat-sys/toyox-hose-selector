@@ -1,20 +1,32 @@
 # TOYOX Hose Selector
 
-เครื่องมือเลือกสายยาง TOYOX ตามหลัก **STAMPED**  
+เครื่องมือเลือกสายยาง TOYOX ตามหลัก **STAMPED**
 พัฒนาโดย **บริษัท เอ็ม วาย เอ็ม เทรดดิ้ง จำกัด (MYM Trading Co., Ltd.)** — ผู้แทนจำหน่าย TOYOX อย่างเป็นทางการ · East Thailand · since 1980
 
-🔗 **Live:** https://kolawat-sys.github.io/toyox-hose-selector/  
+🔗 **Live:** https://kolawat-sys.github.io/toyox-hose-selector/
 🌐 **Website:** [factools.com](https://factools.com/)
 
 ---
 
 ## คืออะไร
 
-Web app ตัวเดียวจบ (single `index.html`) ที่ load `hose-database.json` 165 records แล้วช่วย:
+Web app ตัวเดียวจบ (single `index.html`) ที่ load `hose-database.json` **349 records** แล้วช่วย:
 
 - ลูกค้ากรอก spec ที่รู้ → ระบบ **scoring** ทุกสายในฐาน → จัดอันดับให้ใกล้สุดก่อน
 - แสดง **gap report** ทุกตัว: บอกว่าตรง / เกิน (overkill) / ขาด (เสี่ยง) — sales เอาไปคุยกับลูกค้าได้ตรงไปตรงมา
 - พิมพ์ PDF ผลลัพธ์ (A4) ได้ทันที พร้อม brand header/footer ของ MYM
+
+## ⚠️ เรื่องราคา — อ่านก่อนใช้เสนอลูกค้า
+
+| หัวข้อ | รายละเอียด |
+|---|---|
+| ราคาที่แสดง | **ราคาตั้งมาตรฐาน (list price) ต่อเมตร** |
+| VAT | **ไม่รวม VAT** |
+| อ้างอิง | TOYOX Standard Price 2026 (มีผล 4 มิ.ย. 2026) |
+| ไม่ใช่ | ราคาขายจริง · ราคาหลังส่วนลด · ราคารวมค่าจัดส่ง |
+
+**ราคาขายจริงและเงื่อนไขให้ติดต่อฝ่ายขาย MYM Trading** — เครื่องมือนี้ใช้สำหรับ *เลือกรุ่นสาย* เป็นหลัก
+ตรวจสอบ stock และเงื่อนไขจัดส่งก่อนยืนยันคำสั่งซื้อทุกครั้ง
 
 ## STAMPED weights
 
@@ -41,13 +53,17 @@ Web app ตัวเดียวจบ (single `index.html`) ที่ load `hos
 | File | Purpose |
 |------|---------|
 | `index.html` | App ทั้งหมด (HTML + CSS + JS) |
-| `hose-database.json` | ฐานข้อมูล 165 records |
+| `hose-database.json` | ฐานข้อมูล **349 records** — ฉบับเผยแพร่ (สเปค + ราคาตั้งเท่านั้น) |
 | `mym-logo.png` | Logo MYM (475x474) ที่ header |
 | `favicon.png` | Browser tab icon |
 | `mym-line-qr.jpg` | LINE Official QR ที่ footer |
 | `.nojekyll` | บอก GitHub Pages ห้าม run Jekyll |
 | `README.md` | ไฟล์นี้ |
 | `CHANGELOG.md` | ประวัติ version |
+
+> **หมายเหตุสำหรับผู้ดูแล:** `hose-database.json` ในนี้เป็น **ฉบับเผยแพร่** ที่ generate แยกมาโดยเฉพาะ
+> repo นี้เป็น public — ห้ามอัปไฟล์ฐานข้อมูลฉบับภายในขึ้นมาแทน
+> ตัวแอปมีระบบตรวจจับ ถ้าโหลดไฟล์ฉบับภายในจะขึ้นแถบเตือนสีแดงทันที
 
 ---
 
@@ -72,8 +88,8 @@ Replace `mym-line-qr.jpg` (square aspect ratio recommend)
 const WEIGHTS = { size:35, temperature:25, pressure:25, application:7.5, material:7.5 };
 
 // ใน applyScoring()
-const perfect = scored.filter(x => x.total >= 95);  // ปรับเลขนี้
-const near    = scored.filter(x => x.total >= 70 && x.total < 95);
+const perfect = scored.filter(x => x.total >= 95); // ปรับเลขนี้
+const near = scored.filter(x => x.total >= 70 && x.total < 95);
 ```
 
 ---
@@ -81,9 +97,9 @@ const near    = scored.filter(x => x.total >= 70 && x.total < 95);
 ## Debug (Browser DevTools — F12 → Console)
 
 ```js
-window.__hoseApp.state.filters     // filter ปัจจุบัน
-window.__hoseApp.applyScoring()    // ผล scoring ทั้งหมด
-window.__hoseApp.scoreHose(hoseObj, filters)  // score 1 ตัว
+window.__hoseApp.state.filters // filter ปัจจุบัน
+window.__hoseApp.applyScoring() // ผล scoring ทั้งหมด
+window.__hoseApp.scoreHose(hoseObj, filters) // score 1 ตัว
 window.__hoseApp.toBar(0.5, 'MPa') // unit converter
 ```
 
@@ -93,6 +109,8 @@ window.__hoseApp.toBar(0.5, 'MPa') // unit converter
 
 © 2026 บริษัท เอ็ม วาย เอ็ม เทรดดิ้ง จำกัด · All rights reserved
 
-เครื่องมือนี้พัฒนาโดย MYM Trading เพื่อใช้ภายในและกับลูกค้าของบริษัทเท่านั้น  
-ห้ามทำซ้ำ ดัดแปลง หรือเผยแพร่โดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร  
-ข้อมูล TOYOX อ้างอิงจาก TOYOX Knowledge Base 2026-04-23 (Authorized Distributor right)
+เครื่องมือนี้พัฒนาโดย MYM Trading เพื่อใช้ภายในและกับลูกค้าของบริษัทเท่านั้น
+ห้ามทำซ้ำ ดัดแปลง หรือเผยแพร่โดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
+
+ข้อมูลสเปคอ้างอิงจาก TOYOX Price List ฉบับครบรอบ 20 ปี (2026) · ราคาอ้างอิงจาก TOYOX Standard Price 2026
+(Authorized Distributor right)
